@@ -25,11 +25,18 @@ class Pca(object):
         plt.scatter(X[:, 0], X[:, 1], X[:, 2], marker='o')
         plt.show()
 
+        pca = PCA(n_components=3)
+        pca.fit(X)
+        print('------降维前的指标如下------')
+        print('------explained_variance_ratio_如下------')
+        print(pca.explained_variance_ratio_)
+
         # 开始降维
         # 从3维降到2维
         # n_components用来指定降维后的特征维度数目
         pca = PCA(n_components=2)
         pca.fit(X)
+        print('------降维后的指标如下------')
         # 输出特征值(代表降维后的各主成分的方差值。方差值越大，则说明越是重要的主成分)
         print('------特征值如下------')
         print(pca.explained_variance_)
