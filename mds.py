@@ -21,6 +21,7 @@ class Mds(object):
     # 计算矩阵各行之间的欧式距离；
     # x矩阵的第i行与y矩阵的第0-j行继续欧式距离计算，构成新矩阵第i行[i0、i1...ij]
     def calculate_distance_matrix(self, x, y):
+        # 两个矩阵样本之间的距离(成对距离)
         d = metrics.pairwise_distances(x, y)
         print('------原始距离矩阵如下------')
         print(d)
@@ -35,6 +36,7 @@ class Mds(object):
         B = numpy.zeros((n1, n1))
         for i in range(n1):
             for j in range(n2):
+                # 利用公式求bij
                 B[i, j] = (Dij + DD[i, j] - Di[i] - Dj[j]) / (-2)  # 计算b(ij)
         return B
 
@@ -43,17 +45,18 @@ class Mds(object):
         D = self.calculate_distance_matrix(data, data)
         # 计算内积矩阵B
         B = self.cal_B(D)
-        # 对B进行特征分解，Be矩阵B的特征值，Bv归一化的特征向量
+        # 对B进行特征分解
+        # Be为矩阵B的特征值，Bv为对应的的特征向量
         Be, Bv = numpy.linalg.eigh(B)
-        Be_sort = numpy.argsort(-Be)
         # 特征值从大到小排序
+        Be_sort = numpy.argsort(-Be)
         Be = Be[Be_sort]
-        # 归一化特征向量
+        # 特征值对应的特征向量
         Bv = Bv[:, Be_sort]
 
         # 前n个特征值对角矩阵
         Bez = numpy.diag(Be[0:n])
-        # 前n个归一化特征向量
+        # 前n个特征向量
         Bvz = Bv[:, 0:n]
         Z = numpy.dot(numpy.sqrt(Bez), Bvz.T).T
         return Z
