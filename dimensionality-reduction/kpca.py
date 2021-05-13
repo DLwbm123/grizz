@@ -30,7 +30,6 @@ def kpca(data, n_dims=2, kernel = rbf):
     '''
 
     K = kernel(data)
-    #
     N = K.shape[0]
     one_n = np.ones((N, N)) / N
     K = K - one_n.dot(K) - K.dot(one_n) + one_n.dot(K).dot(one_n)

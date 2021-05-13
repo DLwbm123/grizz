@@ -5,6 +5,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
 import logging
+import random
+
 
 class Knn(object):
 
@@ -23,7 +25,7 @@ class Knn(object):
         logging.warning('Accuracy is: %s', cor / len(X_test))
 
     def knn_v2(self):
-        k = 3
+        k = 10
         X_train, X_test, y_train, y_test = self._get_train_and_test_data()
         predictions = [self.knn_classify(X_train, y_train, data, k) for data in X_test]
         cor = np.count_nonzero((predictions == y_test) == True)
@@ -64,7 +66,19 @@ class Knn(object):
         # random_state代表随机种子编号，保证程序每次运行都分割一样的训练集 & 测试集
         # shuffle代表是否进行有放回抽样
         # test_size表示切割多少百分比的数据做为测试集
+
         X_train, X_test, y_train, y_test = train_test_split(x, y, random_state=2003, shuffle=True)
+        # random.sample(list(range(0, X_train), 30)
+        random.sample(list(range(0, 150)), 30)
+        X_train = x[0: 5: 30]
+        X_test = x[31: 151]
+        y_train = y[0: 30]
+        y_test = y[31: 151]
+        # X_train, X_test, y_train, y_test = train_test_split(X_test, y_train, random_state=2003, shuffle=True)
+        print(X_train.shape)
+        print(X_test.shape)
+        # print(x)
+        # print(y)
         return (X_train, X_test, y_train, y_test)
 
 if __name__ == '__main__':
