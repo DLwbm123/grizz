@@ -556,9 +556,11 @@ class ResultDisplay(object):
         print('SVM subset testing accuracy: {} with n: {} for bayesian coreset'.format(final_accuracy_result['subset_testing_data_acc'], n))
         svm_map['bayesian coreset++'].append((n, final_accuracy_result['subset_testing_data_acc']))
 
+        need_normalization = False
         # Poincare centroids
         normalized_distribution = distribution
         if distribution_type == 'guassian':
+            need_normalization = True
             normalized_distribution = self.gr_obj.get_normalized_distribution(distribution, show=False)
             self.gd_obj.display_gd_distribution(normalized_distribution, show=False, scatt=True)
         poincare_centroids, poincare_clusters = self.gr_obj.get_poincare_centroids(normalized_distribution, point_num=n)
@@ -566,7 +568,7 @@ class ResultDisplay(object):
         prepared_data = self.svm_obj.get_prepared_data(normalized_distribution, distribution_type, poincare_centroids,
                                                        self.gd_obj, original_data,
                                                        self.dm_obj.poincare_centroid_distance_func(),
-                                                       need_normalization=True)
+                                                       need_normalization=need_normalization)
         final_accuracy_result = self.svm_obj.train(prepared_data)
         print('--------------------------------------------------------------------------------')
         print('SVM subset testing accuracy: {} with n: {} for poincare centroids'.format(
@@ -614,7 +616,7 @@ if __name__ == '__main__':
     # rd.kl_divergence(newX[0: 60000], 'mnist', gm_result=mnist_gm_result)
     # rd.mmd(newX[0: 60000], 'mnist', gm_result=mnist_gm_result)
     # rd.svm(newX[0: 60000], 'mnist', original_data=(newX, newY), gm_result=mnist_gm_result)
-
+    #
     # print('Evaluation for Cifar10 distribution')
     # cifar10_trainloader = rd_obj.get_cifar10_trainloader()
     # # dimensional reduction realized in inner part of `get_cifar10_data`
@@ -623,7 +625,7 @@ if __name__ == '__main__':
     # rd.kl_divergence(cifar10_output[0: 45000], 'cifar10', gm_result=cifar10_gm_result)
     # rd.mmd(cifar10_output[0: 45000], 'cifar10', gm_result=cifar10_gm_result)
     # rd.svm(cifar10_output[0: 45000], 'cifar10', original_data=(cifar10_output, cifar10_labels), gm_result=cifar10_gm_result)
-
+    #
     # print('Evaluation for spambase distribution')
     # spambase_data, spambase_labels = rd_obj.get_spambase_data()
     # normalized_spambase_data = gr_obj.get_normalized_distribution(spambase_data, show=False)
