@@ -130,7 +130,6 @@ class SVMClassifier(object):
         logging.info(
                 'Realize SVMClassifier for comparing the performance of the subset selected and the whole dataset!')
 
-    # TODO(Weixin Bu): subset labels
     def get_prepared_data(
             self, distribution, distribution_type, subset, gd_obj, original_data, distance_func, subset_idx=[], need_normalization=False):
         if distribution_type == 'guassian':
@@ -144,7 +143,7 @@ class SVMClassifier(object):
                 subset_labels = [gd_labels[idx] for idx in subset_idx]
             test_gd_distribution = self.test_gd_obj.get_guassian_distribution()
             if need_normalization:
-                test_gd_distribution = self.gr_obj.get_normalized_distribution(test_gd_distribution)
+                test_gd_distribution = self.gr_obj.get_normalized_distribution(test_gd_distribution, show=False)
             test_gd_size_list = self.test_gd_obj.get_size_list()
             test_labels = get_labels(test_gd_size_list)
             return (
@@ -155,7 +154,7 @@ class SVMClassifier(object):
             newX = original_data[0]
             newY = original_data[1] # labels
             if need_normalization:
-                test_distribution = self.gr_obj.get_normalized_distribution(newX[60000: 70000])
+                test_distribution = self.gr_obj.get_normalized_distribution(newX[60000: 70000], show=False)
             else:
                 test_distribution = newX[60000: 70000]
             if not subset_idx:
@@ -172,7 +171,7 @@ class SVMClassifier(object):
             cifar10_data = original_data[0]
             cifar10_labels = original_data[1]
             if need_normalization:
-                test_distribution = self.gr_obj.get_normalized_distribution(cifar10_data[45000: 50000])
+                test_distribution = self.gr_obj.get_normalized_distribution(cifar10_data[45000: 50000], show=False)
             else:
                 test_distribution = cifar10_data[45000: 50000]
             if not subset_idx:
@@ -190,7 +189,7 @@ class SVMClassifier(object):
             spambase_data = original_data[0]
             spambase_labels = original_data[1]
             if need_normalization:
-                test_distribution = self.gr_obj.get_normalized_distribution(spambase_data[4000: 4601])
+                test_distribution = self.gr_obj.get_normalized_distribution(spambase_data[4000: 4601], show=False)
             else:
                 # the data normalized before being used
                 test_distribution = spambase_data[4000: 4601]
@@ -255,10 +254,10 @@ class ResultDisplay(object):
         kl_divergence_map = {}
         self.kcg_obj = kCenterGreedy(distribution)
         if distribution_type == 'guassian':
-            for n in range(50, 650, 50):
+            for n in range(50, 600, 50):
                 self.do_kl_divergence(n, distribution, distribution_type, kl_divergence_map, gm_result)
         elif distribution_type in ('mnist', 'cifar10', 'spambase'):
-            for n in range(50, 650, 50):
+            for n in range(50, 600, 50):
                 self.do_kl_divergence(n, distribution, distribution_type, kl_divergence_map, gm_result)
         title = 'KL Divergence with different batch settings'
         y_label = 'KL Divergence'
@@ -284,18 +283,6 @@ class ResultDisplay(object):
         print('--------------------------------------------------------------------------------')
         print('KL Divergence: {} with n: {} for frechet means'.format(frechet_means_kl_divergence, n))
         kl_divergence_map['frechet means'].append((n, frechet_means_kl_divergence))
-
-        # Poincare centroids
-        normalized_distribution = distribution
-        if distribution_type == 'guassian':
-            normalized_distribution = self.gr_obj.get_normalized_distribution(distribution, show=False)
-        poincare_centroids, poincare_clusters = self.gr_obj.get_poincare_centroids(normalized_distribution, point_num=n)
-        kl_divergence_map.setdefault('poincare centroids', [])
-        poincare_centroids_kl_divergence = self.kld_obj.get_KL_divergence(
-            self.gr_obj.get_normalized_distribution(distribution, show=False), poincare_centroids)
-        print('--------------------------------------------------------------------------------')
-        print('KL Divergence: {} with n: {} for poincare centroids'.format(poincare_centroids_kl_divergence, n))
-        kl_divergence_map['poincare centroids'].append((n, poincare_centroids_kl_divergence))
 
         # Lorentzian centroids
         if distribution_type == 'guassian':
@@ -348,14 +335,26 @@ class ResultDisplay(object):
         print('KL Divergence: {} with n: {} for bayesian coreset++'.format(bc_plus_kl_divergence, n))
         kl_divergence_map['bayesian coreset++'].append((n, bc_plus_kl_divergence))
 
+        # Poincare centroids
+        normalized_distribution = distribution
+        if distribution_type == 'guassian':
+            normalized_distribution = self.gr_obj.get_normalized_distribution(distribution, show=False)
+            self.gd_obj.display_gd_distribution(normalized_distribution, show=False, scatt=True)
+        poincare_centroids, poincare_clusters = self.gr_obj.get_poincare_centroids(normalized_distribution, point_num=n)
+        kl_divergence_map.setdefault('poincare centroids', [])
+        poincare_centroids_kl_divergence = self.kld_obj.get_KL_divergence(normalized_distribution, poincare_centroids)
+        print('--------------------------------------------------------------------------------')
+        print('KL Divergence: {} with n: {} for poincare centroids'.format(poincare_centroids_kl_divergence, n))
+        kl_divergence_map['poincare centroids'].append((n, poincare_centroids_kl_divergence))
+
     def mmd(self, distribution, distribution_type, gm_result=None):
         mmd_map = {}
         self.kcg_obj = kCenterGreedy(distribution)
         if distribution_type == 'guassian':
-            for n in range(50, 650, 50):
+            for n in range(50, 600, 50):
                 self.do_mmd(n, distribution, distribution_type, mmd_map, gm_result)
         elif distribution_type in ('mnist', 'cifar10', 'spambase'):
-            for n in range(50, 650, 50):
+            for n in range(50, 600, 50):
                 self.do_mmd(n, distribution, distribution_type, mmd_map, gm_result)
         title = 'Maximum Mean Discrepancy with different batch settings'
         y_label = 'Maximum Mean Discrepancy'
@@ -369,8 +368,7 @@ class ResultDisplay(object):
         mmd_map.setdefault('euclidean centroids', [])
         euclidean_centroids_mmd = self.mmd_obj.forward(torch.tensor(distribution), torch.tensor(euclidean_centroids))
         print('--------------------------------------------------------------------------------')
-        print(
-            'Maximum Mean Discrepancy: {} with n: {} for euclidean centroids'.format(euclidean_centroids_mmd.item(), n))
+        print('Maximum Mean Discrepancy: {} with n: {} for euclidean centroids'.format(euclidean_centroids_mmd.item(), n))
         mmd_map['euclidean centroids'].append((n, euclidean_centroids_mmd.item()))
 
         # Frechet means
@@ -382,18 +380,6 @@ class ResultDisplay(object):
         print('--------------------------------------------------------------------------------')
         print('Maximum Mean Discrepancy: {} with n: {} for frechet means'.format(frechet_means_mmd.item(), n))
         mmd_map['frechet means'].append((n, frechet_means_mmd.item()))
-
-        # Poincare centroids
-        normalized_distribution = distribution
-        if distribution_type == 'guassian':
-            normalized_distribution = self.gr_obj.get_normalized_distribution(distribution, show=False)
-        poincare_centroids, poincare_clusters = self.gr_obj.get_poincare_centroids(normalized_distribution, point_num=n)
-        mmd_map.setdefault('poincare centroids', [])
-        poincare_centroids_mmd = self.mmd_obj.forward(self.gr_obj.get_normalized_distribution(distribution, show=False),
-                                                      poincare_centroids)
-        print('--------------------------------------------------------------------------------')
-        print('Maximum Mean Discrepancy: {} with n: {} for poincare centroids'.format(poincare_centroids_mmd.item(), n))
-        mmd_map['poincare centroids'].append((n, poincare_centroids_mmd.item()))
 
         # Lorentzian centroids
         if distribution_type == 'guassian':
@@ -447,14 +433,26 @@ class ResultDisplay(object):
         print('Maximum Mean Discrepancy: {} with n: {} for bayesian coreset++'.format(bc_plus_mmd.item(), n))
         mmd_map['bayesian coreset++'].append((n, bc_plus_mmd.item()))
 
+        # Poincare centroids
+        normalized_distribution = distribution
+        if distribution_type == 'guassian':
+            normalized_distribution = self.gr_obj.get_normalized_distribution(distribution, show=False)
+            self.gd_obj.display_gd_distribution(normalized_distribution, show=False, scatt=True)
+        poincare_centroids, poincare_clusters = self.gr_obj.get_poincare_centroids(normalized_distribution, point_num=n)
+        mmd_map.setdefault('poincare centroids', [])
+        poincare_centroids_mmd = self.mmd_obj.forward(normalized_distribution, poincare_centroids)
+        print('--------------------------------------------------------------------------------')
+        print('Maximum Mean Discrepancy: {} with n: {} for poincare centroids'.format(poincare_centroids_mmd.item(), n))
+        mmd_map['poincare centroids'].append((n, poincare_centroids_mmd.item()))
+
     def svm(self, distribution, distribution_type, original_data=None, gm_result=None):
         svm_map = {}
         self.kcg_obj = kCenterGreedy(distribution)
         if distribution_type == 'guassian':
-            for n in range(50, 650, 50):
+            for n in range(50, 600, 50):
                 self.do_svm(n, distribution, distribution_type, svm_map, original_data, gm_result)
         elif distribution_type in ('mnist', 'cifar10', 'spambase'):
-            for n in range(50, 650, 50):
+            for n in range(50, 600, 50):
                 self.do_svm(n, distribution, distribution_type, svm_map, original_data, gm_result)
         title = 'SVM testing accuracy with different batch settings'
         y_label = 'SVM testing accuracy'
@@ -488,22 +486,6 @@ class ResultDisplay(object):
         print('SVM subset testing accuracy: {} with n: {} for frechet means'.format(
             final_accuracy_result['subset_testing_data_acc'], n))
         svm_map['frechet means'].append((n, final_accuracy_result['subset_testing_data_acc']))
-
-        # Poincare centroids
-        normalized_distribution = distribution
-        if distribution_type == 'guassian':
-            self.gd_obj.display_gd_distribution(distribution, show=False, scatt=True)
-            normalized_distribution = self.gr_obj.get_normalized_distribution(distribution, show=False)
-        poincare_centroids, poincare_clusters = self.gr_obj.get_poincare_centroids(normalized_distribution, point_num=n)
-        svm_map.setdefault('poincare centroids', [])
-        prepared_data = self.svm_obj.get_prepared_data(
-            normalized_distribution, distribution_type, poincare_centroids,
-            self.gd_obj, original_data, self.dm_obj.poincare_centroid_distance_func(), need_normalization=True)
-        final_accuracy_result = self.svm_obj.train(prepared_data)
-        print('--------------------------------------------------------------------------------')
-        print('SVM subset testing accuracy: {} with n: {} for poincare centroids'.format(
-            final_accuracy_result['subset_testing_data_acc'], n))
-        svm_map['poincare centroids'].append((n, final_accuracy_result['subset_testing_data_acc']))
 
         # Lorentzian centroids
         if distribution_type == 'guassian':
@@ -574,9 +556,26 @@ class ResultDisplay(object):
         print('SVM subset testing accuracy: {} with n: {} for bayesian coreset'.format(final_accuracy_result['subset_testing_data_acc'], n))
         svm_map['bayesian coreset++'].append((n, final_accuracy_result['subset_testing_data_acc']))
 
+        # Poincare centroids
+        normalized_distribution = distribution
+        if distribution_type == 'guassian':
+            normalized_distribution = self.gr_obj.get_normalized_distribution(distribution, show=False)
+            self.gd_obj.display_gd_distribution(normalized_distribution, show=False, scatt=True)
+        poincare_centroids, poincare_clusters = self.gr_obj.get_poincare_centroids(normalized_distribution, point_num=n)
+        svm_map.setdefault('poincare centroids', [])
+        prepared_data = self.svm_obj.get_prepared_data(normalized_distribution, distribution_type, poincare_centroids,
+                                                       self.gd_obj, original_data,
+                                                       self.dm_obj.poincare_centroid_distance_func(),
+                                                       need_normalization=True)
+        final_accuracy_result = self.svm_obj.train(prepared_data)
+        print('--------------------------------------------------------------------------------')
+        print('SVM subset testing accuracy: {} with n: {} for poincare centroids'.format(
+            final_accuracy_result['subset_testing_data_acc'], n))
+        svm_map['poincare centroids'].append((n, final_accuracy_result['subset_testing_data_acc']))
+
     def plot_result(self, title, data_map, y_label):
         plt.figure(title)
-        plt.title(title, fontsize='xx-large', fontweight='heavy')
+        # plt.title(title, fontsize='xx-large', fontweight='heavy')
         t = 0
         for name, kl_data in data_map.items():
             x_list = []
@@ -589,8 +588,8 @@ class ResultDisplay(object):
         plt.legend()
         plt.xlabel('subset size')
         plt.ylabel(y_label)
-        figure_name = '{}.png'.format(title)
-        plt.savefig(figure_name, bbox_inches='tight')
+        figure_name = '{}.eps'.format(title)
+        plt.savefig(figure_name, bbox_inches='tight', dpi=600, format='eps')
         plt.show()
 
 
@@ -601,20 +600,20 @@ if __name__ == '__main__':
     gr_obj = GeometricRepresentation()
     mixture_obj = Mixture()
 
-    # print('Evaluation for Guassian distribution')
+    print('Evaluation for Guassian distribution')
     # rd.kl_divergence(rd.gd_distribution, 'guassian')
     # rd.mmd(rd.gd_distribution, 'guassian')
-    # rd.svm(rd.gd_distribution, 'guassian')
+    rd.svm(rd.gd_distribution, 'guassian')
 
-    print('Evaluation for MNIST distribution')
-    X, y = rd_obj.get_mnist_data()
-    normalized_X = gr_obj.get_normalized_distribution(X, show=False)
-    newX = dr_obj.pca_dr(normalized_X)
-    newY = [int(val) for _, val in y.iteritems()]
-    mnist_gm_result = mixture_obj.get_gaussian_mixture_result(newX[0: 60000])
+    # print('Evaluation for MNIST distribution')
+    # X, y = rd_obj.get_mnist_data()
+    # normalized_X = gr_obj.get_normalized_distribution(X, show=False)
+    # newX = dr_obj.pca_dr(normalized_X)
+    # newY = [int(val) for _, val in y.iteritems()]
+    # mnist_gm_result = mixture_obj.get_gaussian_mixture_result(newX[0: 60000])
     # rd.kl_divergence(newX[0: 60000], 'mnist', gm_result=mnist_gm_result)
     # rd.mmd(newX[0: 60000], 'mnist', gm_result=mnist_gm_result)
-    rd.svm(newX[0: 60000], 'mnist', original_data=(newX, newY), gm_result=mnist_gm_result)
+    # rd.svm(newX[0: 60000], 'mnist', original_data=(newX, newY), gm_result=mnist_gm_result)
 
     # print('Evaluation for Cifar10 distribution')
     # cifar10_trainloader = rd_obj.get_cifar10_trainloader()
