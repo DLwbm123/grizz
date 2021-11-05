@@ -237,7 +237,8 @@ class GdResultDisplay(object):
         print('--------------------------------------------------------------------------------')
         print('Maximum Mean Discrepancy: {} with n: {} for euclidean centroids(SGD)'.format(euclidean_centroids_mmd.item(), n))
         mmd_map_k = 'SGD_{}'.format(distribution_type)
-        mmd_map.setdefault(mmd_map_k, [])
+        if not mmd_map_k in mmd_map:
+            mmd_map[mmd_map_k] = []
         mmd_map[mmd_map_k].append((n, euclidean_centroids_mmd.item()))
 
         poincare_centroids, poincare_clusters = gr_obj.get_poincare_centroids(distribution, point_num=n)
@@ -259,7 +260,8 @@ class GdResultDisplay(object):
         print('--------------------------------------------------------------------------------')
         print('Maximum Mean Discrepancy: {} with n: {} for euclidean centroids(RGD)'.format(poincare_centroids_mmd.item(), n))
         mmd_map_k = 'RGD_{}'.format(distribution_type)
-        mmd_map.setdefault(mmd_map_k, [])
+        if not mmd_map_k in mmd_map:
+            mmd_map[mmd_map_k] = []
         mmd_map[mmd_map_k].append((n, poincare_centroids_mmd.item()))
 
         updated_centroids = svgd_obj.update(euclidean_centroids, model.dlnprob, n_iter=10000, stepsize=0.01)
@@ -267,7 +269,8 @@ class GdResultDisplay(object):
         print('--------------------------------------------------------------------------------')
         print('Maximum Mean Discrepancy: {} with n: {} for euclidean centroids(SVGD)'.format(updated_centroids_mmd.item(), n))
         mmd_map_k = 'SVGD_{}'.format(distribution_type)
-        mmd_map.setdefault(mmd_map_k, [])
+        if not mmd_map_k in mmd_map:
+            mmd_map[mmd_map_k] = []
         mmd_map[mmd_map_k].append((n, updated_centroids_mmd.item()))
 
 
