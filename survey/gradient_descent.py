@@ -237,6 +237,7 @@ class GdResultDisplay(object):
         print('--------------------------------------------------------------------------------')
         print('Maximum Mean Discrepancy: {} with n: {} for euclidean centroids(SGD)'.format(euclidean_centroids_mmd.item(), n))
         mmd_map_k = 'SGD_{}'.format(distribution_type)
+        mmd_map.setdefault(mmd_map_k, [])
         mmd_map[mmd_map_k].append((n, euclidean_centroids_mmd.item()))
 
         poincare_centroids, poincare_clusters = gr_obj.get_poincare_centroids(distribution, point_num=n)
@@ -258,13 +259,15 @@ class GdResultDisplay(object):
         print('--------------------------------------------------------------------------------')
         print('Maximum Mean Discrepancy: {} with n: {} for euclidean centroids(RGD)'.format(poincare_centroids_mmd.item(), n))
         mmd_map_k = 'RGD_{}'.format(distribution_type)
+        mmd_map.setdefault(mmd_map_k, [])
         mmd_map[mmd_map_k].append((n, poincare_centroids_mmd.item()))
 
-        updated_centroids = svgd_obj.update(euclidean_centroids, model.dlnprob, n_iter=1000, stepsize=0.01)
+        updated_centroids = svgd_obj.update(euclidean_centroids, model.dlnprob, n_iter=10000, stepsize=0.01)
         updated_centroids_mmd = mmd_obj.forward(torch.tensor(distribution), torch.tensor(updated_centroids))
         print('--------------------------------------------------------------------------------')
         print('Maximum Mean Discrepancy: {} with n: {} for euclidean centroids(SVGD)'.format(updated_centroids_mmd.item(), n))
         mmd_map_k = 'SVGD_{}'.format(distribution_type)
+        mmd_map.setdefault(mmd_map_k, [])
         mmd_map[mmd_map_k].append((n, updated_centroids_mmd.item()))
 
 
@@ -289,23 +292,23 @@ if __name__ == '__main__':
 
     print('Start gradient descents for MNIST distribution')
     mnist_mmd_map = {}
-    for n in range(50, 450, 50):
+    for n in range(50, 600, 50):
         gdrd_obj.display(newX[0: 60000], 'mnist', n, mnist_model, mnist_mmd_map)
 
     title = 'Maximum Mean Discrepancy with different batch settings'
     y_label = 'Maximum Mean Discrepancy'
     rd.plot_result(title, mnist_mmd_map, y_label)
-
-    print('Start gradient descents for Cifar10 distribution')
-    cifar10_trainloader = rd_obj.get_cifar10_trainloader()
-    # dimensional reduction realized in inner part of `get_cifar10_data`
-    cifar10_output, cifar10_labels = rd_obj.get_cifar10_data(cifar10_trainloader)
-    _cifar10_mean, _cifar10_cov = mixture_obj.get_gaussian_mixture_result(cifar10_output[0: 45000])
-    cifar10_model = MVN(_cifar10_mean[0], _cifar10_cov[0])
-    cifar10_mmd_map = {}
-    for n in range(50, 650, 50):
-        gdrd_obj.display(cifar10_output[0: 45000], 'cifar10', n, cifar10_model, cifar10_mmd_map)
-
-    title = 'Maximum Mean Discrepancy with different batch settings'
-    y_label = 'Maximum Mean Discrepancy'
-    rd.plot_result(title, cifar10_mmd_map, y_label)
+    #
+    # print('Start gradient descents for Cifar10 distribution')
+    # cifar10_trainloader = rd_obj.get_cifar10_trainloader()
+    # # dimensional reduction realized in inner part of `get_cifar10_data`
+    # cifar10_output, cifar10_labels = rd_obj.get_cifar10_data(cifar10_trainloader)
+    # _cifar10_mean, _cifar10_cov = mixture_obj.get_gaussian_mixture_result(cifar10_output[0: 45000])
+    # cifar10_model = MVN(_cifar10_mean[0], _cifar10_cov[0])
+    # cifar10_mmd_map = {}
+    # for n in range(50, 650, 50):
+    #     gdrd_obj.display(cifar10_output[0: 45000], 'cifar10', n, cifar10_model, cifar10_mmd_map)
+    #
+    # title = 'Maximum Mean Discrepancy with different batch settings'
+    # y_label = 'Maximum Mean Discrepancy'
+    # rd.plot_result(title, cifar10_mmd_map, y_label)
