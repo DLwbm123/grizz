@@ -8,9 +8,11 @@ from scipy.spatial.distance import pdist, squareform
 from torch.optim.optimizer import Optimizer, required
 
 from evaluation import MaximumMeanDiscrepancy, ResultDisplay
+from gaussian import GaussianDistribution
 from manifold import PoincareManifold
 from real_dataset import RealisticDatasets, DimensionalityReduction, Mixture
 from representation import GeometricRepresentation
+from utils import get_cfg_data, get_labels
 
 
 class OptimizerBase(ABC):
@@ -245,7 +247,7 @@ class GdResultDisplay(object):
         rt = 0
         rsgd_points = []
         for poincare_cluster in poincare_clusters:
-            r_mu = poincare_centroids[rt]
+            r_mu = np.array(poincare_centroids[rt])
             points = distribution[poincare_cluster]
             for point in points:
                 star = 1 + 2 * (np.linalg.norm(point - r_mu) ** 2) / (
@@ -283,25 +285,57 @@ if __name__ == '__main__':
     mmd_obj = MaximumMeanDiscrepancy()
     svgd_obj = SVGD()
     gdrd_obj = GdResultDisplay()
+    mixture_obj = Mixture()
 
+    #cfg = get_cfg_data()
+    #gd_obj = GaussianDistribution(cfg['space-version']['type'], cfg['guassian-params']['items'])
+    #gd_size_list = gd_obj.get_size_list()
+    #gd_labels = get_labels(gd_size_list)
+    #_mean_guassian, _cov_guassian = mixture_obj.get_gaussian_mixture_result(rd.gd_distribution)
+    #guassian_model = MVN(_mean_guassian[0], _cov_guassian[0])
+    #print('Start gradient descents for Guassian distribution')
+    #guassian_mmd_map = {}
+    #for n in range(50, 600, 50):
+    #    gdrd_obj.display(rd.gd_distribution, 'guassian', n, guassian_model, guassian_mmd_map)
+    #title = 'Guassian MMD'
+    #y_label = 'Maximum Mean Discrepancy'
+    #dataset_type = 'guassian_mmd'
+    #rd.write_result_to_file(guassian_mmd_map, dataset_type)
+    #rd.plot_result(title, guassian_mmd_map, y_label)
+
+
+    #spambase_data, spambase_labels = rd_obj.get_spambase_data()
+    #normalized_spambase_data = gr_obj.get_normalized_distribution(spambase_data, show=False)
+    #_mean_spambase, _cov_spambase = mixture_obj.get_gaussian_mixture_result(normalized_spambase_data[0: 4000])
+    #spambase_model = MVN(_mean_spambase[0], _cov_spambase[0])
+    #print('Start gradient descents for Spambase distribution')
+    #spambase_mmd_map = {}
+    #for n in range(50, 600, 50):
+    #    gdrd_obj.display(normalized_spambase_data[0: 4000], 'spambase', n, spambase_model, spambase_mmd_map)
+    #title = 'Spambase MMD'
+    #y_label = 'Maximum Mean Discrepancy'
+    #dataset_type = 'spambase_mmd'
+    #rd.write_result_to_file(spambase_mmd_map, dataset_type)
+    #rd.plot_result(title, spambase_mmd_map, y_label)
+    
     X, y = rd_obj.get_mnist_data()
     normalized_X = gr_obj.get_normalized_distribution(X, show=False)
     newX = dr_obj.pca_dr(normalized_X)
     newY = [int(val) for _, val in y.iteritems()]
-
     mixture_obj = Mixture()
-    _mean, _cov = mixture_obj.get_gaussian_mixture_result(newX[0: 60000])
-    mnist_model = MVN(_mean[0], _cov[0])
-
+    _mean_mnist, _cov_mnist = mixture_obj.get_gaussian_mixture_result(newX[0: 60000])
+    mnist_model = MVN(_mean_mnist[0], _cov_mnist[0])
     print('Start gradient descents for MNIST distribution')
     mnist_mmd_map = {}
     for n in range(50, 600, 50):
         gdrd_obj.display(newX[0: 60000], 'mnist', n, mnist_model, mnist_mmd_map)
-
-    title = 'Maximum Mean Discrepancy with different batch settings'
+    
+    title = 'MNIST MMD'
     y_label = 'Maximum Mean Discrepancy'
+    dataset_type = 'mnist_mmd'
+    rd.write_result_to_file(mnist_mmd_map, dataset_type)
     rd.plot_result(title, mnist_mmd_map, y_label)
-    #
+########################################################################################################################
     # print('Start gradient descents for Cifar10 distribution')
     # cifar10_trainloader = rd_obj.get_cifar10_trainloader()
     # # dimensional reduction realized in inner part of `get_cifar10_data`
